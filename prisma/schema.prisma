@@ -16,7 +16,7 @@ model Entry {
   updatedAt DateTime @updatedAt
   name String @db.VarChar(30)
   emotions String[]
-  description String
+  description Json?
   user User @relation(fields: [user_id], references: [id])
   user_id Int
 }

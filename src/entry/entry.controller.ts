@@ -16,7 +16,6 @@ export default class EntryController {
         return await this.entryService.findEntriesByUserId(userId);
     }
 
-
     @Post('/')
     async createEntry(@Param('userId') userId: string, @Body() createEntryRequest: CreateEntryRequest): Promise<EntryDto> {
         return await this.entryService.createEntry(createEntryRequest, Number.parseInt(userId));

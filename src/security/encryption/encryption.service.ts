@@ -7,6 +7,7 @@ interface EncryptionService {
 }
 
 const iv: Buffer = randomBytes(16);
+const key = randomBytes(32);
 
 
 @Injectable()
@@ -14,18 +15,24 @@ export default class EncryptionServiceImpl implements EncryptionService {
 
     private readonly logger: Logger = new Logger(EncryptionServiceImpl.name);
 
-    private algorithm: string =  process.env.encryptionAlgorithm;
+    private algorithm: string =  'aes-256-ctr';
 
 
-    encrypt(text: string, userSecret: string): string {
-        console.log(iv);
-        const cipher = createCipheriv('aes-256-cbc', userSecret, iv);
-        return cipher.update(text, 'utf-8', 'base64') + cipher.final('base64');
+    encrypt(text: string, userSecret: string): any {
+        const cipher = createCipheriv(this.algorithm, userSecret, iv);
+        const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
+        return {
+            iv: iv.toString('hex'),
+            content: encrypted.toString('hex')
+        }
     }
 
-    decrypt(hash: string, secretKey: string): string {
-        const decipher = createDecipheriv('aes-256-cbc', secretKey , iv);
-        return decipher.update(hash, 'base64', 'utf-8') + decipher.final('utf-8');
+    decrypt(hash: any, secretKey: string): string {
+        console.log(iv.toString('hex'));
+        const decipher = createDecipheriv(this.algorithm, secretKey, Buffer.from(hash.iv, 'hex'));
+        const decrypted = Buffer.concat([decipher.update(Buffer.from(hash.content, 'hex')), decipher.final()]);
+
+    return decrypted.toString();
     }
     
 }

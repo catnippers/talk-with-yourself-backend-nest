@@ -3,7 +3,7 @@ import EmailVerificationModel from "./email.verification";
 
 import { EmailVerification  } from "@prisma/client";
 import PrismaService from "src/config/prisma/prisma.service";
-import { Injectable, Logger } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { EmailVerificationRecordNotFound, InvalidVerificationCodeException } from "src/exception/email.verification.exceptions";
 
 
@@ -92,13 +92,13 @@ export default class EmailVerificationServiceImpl implements EmailVerificationSe
             this.logger.error(
                 `Email Verification mail not sent for email: ${email}`
             );
-
             await this.prisma.emailVerification.delete({
                 where: {email: email}
             }).catch(error => this.logger.error(
                 `Email verification clean up failed for email`,
                 email
             ));
+            throw new HttpException("Email sending failed", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

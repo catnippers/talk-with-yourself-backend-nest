@@ -92,10 +92,10 @@ export default class AuthServiceImpl implements AuthService {
 
     async signUpUser(signUpRequest: SignUpRequest): Promise<UserDto> {
 
-        // const verificationRecord = await this.emailVerificationService.loadVerificationRecord(signUpRequest.email)
-        // if(!verificationRecord) {
-        //     throw new UnverifiedEmailException("Email not verified");
-        // }
+        const verificationRecord = await this.emailVerificationService.loadVerificationRecord(signUpRequest.email)
+        if(!verificationRecord) {
+            throw new UnverifiedEmailException("Email not verified");
+        }
 
         return this.userService.signUpUser(signUpRequest);
     }
