@@ -31,8 +31,6 @@ export default class EntryServiceImpl implements EntriesService {
             throw new EntryNotFound("Entry not found");
         }
 
-        console.log(entry.description);
-
         const decrypted = this.encryptionService.decrypt(
             entry.description, 
             secretKey

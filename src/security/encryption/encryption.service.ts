@@ -28,7 +28,6 @@ export default class EncryptionServiceImpl implements EncryptionService {
     }
 
     decrypt(hash: any, secretKey: string): string {
-        console.log(iv.toString('hex'));
         const decipher = createDecipheriv(this.algorithm, secretKey, Buffer.from(hash.iv, 'hex'));
         const decrypted = Buffer.concat([decipher.update(Buffer.from(hash.content, 'hex')), decipher.final()]);
 
