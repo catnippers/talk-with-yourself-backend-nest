@@ -1,66 +1,73 @@
-import { Entry } from "@prisma/client";
-import { IsArray, IsDate, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { Entry } from '@prisma/client';
+import {
+  IsArray,
+  IsDate,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+} from 'class-validator';
 
 export default class EntryDto {
+  @IsNumber()
+  id: number;
 
-    @IsNumber()
-    id: number;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsString()
-    @IsNotEmpty()
-    name: string;
+  @IsNotEmpty()
+  @IsArray()
+  emotions: string[];
 
-    @IsNotEmpty()
-    @IsArray()
-    emotions: string[];
+  @IsDate()
+  @IsNotEmpty()
+  createdAt: Date;
 
-    @IsDate()
-    @IsNotEmpty()
-    createdAt: Date;
+  @IsDate()
+  @IsNotEmpty()
+  updatedAt: Date;
 
-    @IsDate()
-    @IsNotEmpty()
-    updatedAt: Date;
-
-    constructor (entry: Entry) {
-        this.id = entry.id;
-        this.name = entry.name;
-        this.emotions = entry.emotions;
-        this.createdAt = entry.createdAt;
-        this.updatedAt = entry.updatedAt;
-    }
+  constructor(entry: Entry) {
+    this.id = entry.id;
+    this.name = entry.name;
+    this.emotions = entry.emotions;
+    this.createdAt = entry.createdAt;
+    this.updatedAt = entry.updatedAt;
+  }
 }
 
 export class CreateEntryRequest {
-    @IsString()
-    @IsNotEmpty()
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsNotEmpty()
-    @IsArray()
-    emotions: string[];
+  @IsNotEmpty()
+  @IsArray()
+  emotions: string[];
 
-    @IsNotEmpty()
-    @IsString()
-    description: string;
+  @IsNotEmpty()
+  @IsString()
+  description: string;
 
-    @IsNotEmpty() @IsString()
-    userSecret: string;
+  @IsNotEmpty()
+  @IsString()
+  userSecret: string;
 }
 
 export class UpdateEntryRequest {
-    @IsString()
-    @IsNotEmpty()
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsNotEmpty()
-    @IsArray()
-    emotions: string[];
+  @IsNotEmpty()
+  @IsArray()
+  emotions: string[];
 
-    @IsNotEmpty()
-    @IsString()
-    description: string;
+  @IsNotEmpty()
+  @IsString()
+  description: string;
 
-    @IsNotEmpty() @IsString()
-    userSecret: string;
+  @IsNotEmpty()
+  @IsString()
+  userSecret: string;
 }

@@ -26,15 +26,9 @@ model User {
   email   String   @unique
   first_name String
   last_name String
+  verified Boolean @default(false)
+  verification_code String
   password String
   refresh_token_id String?
   entries Entry[]
-}
-
-model EmailVerification {
-  id Int @id @default(autoincrement())
-  email String @unique
-  code Int
-  verified Boolean @default(false)
-  generatedAt DateTime @default(now())
 }

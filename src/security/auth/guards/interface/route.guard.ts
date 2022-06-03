@@ -1,14 +1,10 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Observable } from 'rxjs';
 
-export default interface SubRouteGuard {
-    getUnauthorizedMessage(): string;
+export default interface RouteGuard {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean>;
 
-    getUrlSubRoute(): string;
-
-    canActivate(
-        context: ExecutionContext,
-    ): boolean | Promise<boolean> | Observable<boolean>;
-
-    handleRequest(err, user, info): any;
+  handleRequest(err, user, info): any;
 }

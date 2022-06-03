@@ -11,19 +11,15 @@ import EmailVerificationService from 'src/user/email-verification/email.verifica
 import PrismaService from 'src/config/prisma/prisma.service';
 
 @Module({
-    imports: [
-        PassportModule, 
-        UserModule, 
-        SecurityModule
-    ],
-    providers: [
-        AuthService,
-        JwtStrategy,
-        EmailSenderImpl,
-        EmailVerificationService,
-        PrismaService
-    ],
-    exports: [AuthService],
-    controllers: [AuthController],
+  imports: [PassportModule, UserModule, SecurityModule],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    EmailSenderImpl,
+    EmailVerificationService,
+    PrismaService,
+  ],
+  exports: [AuthService],
+  controllers: [AuthController],
 })
 export class AuthModule {}
