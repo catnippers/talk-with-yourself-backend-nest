@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 import EntryModule from './entry/entry.module';
 import { AuthModule } from './security/auth/auth.module';
@@ -8,7 +9,13 @@ import SecurityModule from './security/security.module';
 import UserModule from './user/user.module';
 
 @Module({
-  imports: [AuthModule, UserModule, EntryModule, SecurityModule],
+  imports: [
+    EventEmitterModule.forRoot(),
+    AuthModule,
+    UserModule,
+    EntryModule,
+    SecurityModule
+  ],
   controllers: [],
   providers: [
     {

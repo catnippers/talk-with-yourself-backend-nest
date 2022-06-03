@@ -74,7 +74,7 @@ export default class JwtUtil {
     if (!claim) {
       throw new HttpException(
         'invalid claim',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
     return claim;
