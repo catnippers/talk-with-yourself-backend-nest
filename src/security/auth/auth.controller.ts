@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Request, response, Response } from 'express';
 
 import AuthDto, { LoginRequest, RefreshTokenRequest, SignUpRequest } from './auth.dto';
 import AuthService from './auth.service';
@@ -40,6 +40,13 @@ export default class AuthController {
   async verifyCode(@Body() body: VerificationRequest): Promise<void> {
     const { email, code } = body;
     return await this.authService.verifyEmailCode(email, code);
+  }
+
+  @Post('/log-out')
+  async logOut(@Res() response: Response) {
+    const logOutCookie = `RefreshToken=; HttpOnly; Path=/; Max-Age=0`;
+    response.setHeader('Set-Cookie', logOutCookie);
+    return response.status(200).send({});
   }
 
   @Post('/sign-up')
