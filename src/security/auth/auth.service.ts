@@ -1,4 +1,4 @@
-import { Body, Injectable, Logger } from '@nestjs/common';
+import { Body, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 
 import UserService from 'src/user/user.service';
 import { LoginRequest, SignUpRequest } from './auth.dto';
@@ -19,6 +19,7 @@ import {
   UnverifiedEmailException,
 } from 'src/exception/email.verification.exceptions';
 import EmailSender from 'src/config/email/email.sender';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 interface AuthService {
   authenticateUser(loginRequest: LoginRequest): Promise<AuthDto>;
@@ -27,8 +28,6 @@ interface AuthService {
     userId: number,
   ): Promise<{ accessToken: string }>;
   signUpUser(signUpRequest: SignUpRequest): Promise<UserDto>;
-  sendEmailVerificationCode(email: string): Promise<void>;
-  verifyEmailCode(email: string, code: string): Promise<void>;
 }
 
 @Injectable()
@@ -40,7 +39,7 @@ export default class AuthServiceImpl implements AuthService {
     private prisma: PrismaService,
     private jwtUtil: JwtUtil,
     private securityUtil: SecurityUtil,
-    private emailSender: EmailSender,
+    private eventEmitter: EventEmitter2
   ) {}
 
   async verifyEmailCode(email: string, code: string): Promise<void> {
@@ -49,10 +48,7 @@ export default class AuthServiceImpl implements AuthService {
 
   async authenticateUser(loginRequest: LoginRequest): Promise<AuthDto> {
     const { email, password } = loginRequest;
-    const user = await this.userService.findUserByEmail(email);
-    if (!user) {
-      throw new UserNotFoundException('Invalid username or password');
-    }
+    const user = await this.userService.findUserByEmail(email, new UnauthorizedException("Invalid username or password"));
     if (
       !(await this.securityUtil
         .passwordEncoder()
@@ -77,18 +73,11 @@ export default class AuthServiceImpl implements AuthService {
     };
   }
 
-  async refreshToken(
-    refreshToken: string,
-    userId: number,
-  ): Promise<{ accessToken: string }> {
-    const user = await this.userService.findUserById(userId);
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
 
-    if (!user) {
-      throw new UserNotFoundException('User not found');
-    }
-
-    const claims: Claims = this.jwtUtil.verifyJwt(refreshToken);
-    if (claims.jti !== user.refresh_token_id) {
+    const { sub, jti }: Claims = this.jwtUtil.verifyJwt(refreshToken);
+    const user = await this.userService.findUserById(Number.parseInt(sub), new UnauthorizedException("Invalid token"));
+    if (jti !== user.refresh_token_id) {
       throw new InvalidRefreshToken('Invalid refresh token');
     }
 
@@ -98,10 +87,8 @@ export default class AuthServiceImpl implements AuthService {
   }
 
   async signUpUser(signUpRequest: SignUpRequest): Promise<UserDto> {
-    return this.userService.signUpUser(signUpRequest);
-  }
-
-  async sendEmailVerificationCode(email: string): Promise<void> {
-    this.emailSender.sendEmail('', '', '');
+    const user = await this.userService.signUpUser(signUpRequest);
+    this.eventEmitter.emit('user.registered', user);
+    return new UserDto(user);
   }
 }

@@ -1,10 +1,11 @@
 import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { Request, response, Response } from 'express';
+import { Response, Request } from 'express';
 
 import AuthDto, { LoginRequest, RefreshTokenRequest, SignUpRequest } from './auth.dto';
 import AuthService from './auth.service';
 import { Public } from 'src/config/util/decorators';
 import { UserDto, VerificationRequest } from 'src/user/user.dto';
+import { JwtAuthGuard } from './guards/jwt.auth.guard';
 
 @Controller({
   path: '/auth',
@@ -16,14 +17,18 @@ export default class AuthController {
 
   @Post('/login')
   async authenticate(@Body() loginRequest: LoginRequest, @Res() response: Response) {
-    const { accessToken, id, email, refreshToken } = await this.authService.authenticateUser(
-      loginRequest,
-    );
+    const {
+      accessToken,
+      id,
+      email,
+      refreshToken 
+    } = await this.authService.authenticateUser(loginRequest);
     const refreshTokenCookie = `RefreshToken=${refreshToken}; HttpOnly; Path=/; SameSite=None; Secure=true; Max-Age=432000`;
-    const accessTokenCookie = `AccessToken=${accessToken}; HttpOnly; Path=/; SameSite=None; Secure=true; Max-Age=2000`;
+    const accessTokenCookie = `AccessToken=${accessToken}; HttpOnly; Path=/; SameSite=None; Secure=true; Max-Age=10000`;
 
-    response.setHeader('Set-Cookie', accessTokenCookie);
-    response.setHeader('Set-Cookie', refreshTokenCookie);
+    response.setHeader('Set-Cookie', [
+      // accessTokenCookie, 
+      refreshTokenCookie]);
     return response.status(200)
       .json({
         id: id,
@@ -43,6 +48,7 @@ export default class AuthController {
   }
 
   @Post('/log-out')
+  @UseGuards(JwtAuthGuard)
   async logOut(@Res() response: Response) {
     const logOutCookie = `RefreshToken=; HttpOnly; Path=/; Max-Age=0`;
     response.setHeader('Set-Cookie', logOutCookie);
@@ -55,8 +61,13 @@ export default class AuthController {
   }
 
   @Post('/refresh-token')
-  async refreshToken(@Body() request: RefreshTokenRequest): Promise<{ accessToken: string }> {
-    const { userId, refreshToken } = request;
-    return await this.authService.refreshToken(refreshToken, userId);
+  async refreshToken(@Res() response: Response, @Req() request: Request) {
+    const refreshToken = request?.cookies?.RefreshToken;
+    console.log(refreshToken);
+    const { accessToken  } = await this.authService.refreshToken(refreshToken);
+    const accessTokenCookie = `AccessToken=${accessToken}; HttpOnly; Path=/; SameSite=None; Secure=true; Max-Age=10000`;
+    response.setHeader('Set-Cookie', accessTokenCookie);
+    return response.status(200)
+      .json({});
   }
 }

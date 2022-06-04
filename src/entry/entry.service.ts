@@ -41,10 +41,7 @@ export default class EntryServiceImpl implements EntriesService {
     return entry;
   }
 
-  async createEntry(
-    createEntryRequest: CreateEntryRequest,
-    userId: number,
-  ): Promise<EntryDto> {
+  async createEntry(createEntryRequest: CreateEntryRequest, userId: number): Promise<EntryDto> {
     const { name, description, emotions, userSecret } = createEntryRequest;
     return new EntryDto(
       await this.prisma.entry.create({

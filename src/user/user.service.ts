@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { User, Prisma } from '@prisma/client';
 import EmailSender from 'src/config/email/email.sender';
 
 import PrismaService from 'src/config/prisma/prisma.service';
 import { generateRandomNumber } from 'src/config/util/util';
+import { UserExistsException, UserNotFoundException } from 'src/exception/auth.exceptions';
 import {
   InvalidVerificationCodeException,
   UnverifiedEmailException,
@@ -12,8 +13,8 @@ import { SignUpRequest } from 'src/security/auth/auth.dto';
 import SecurityUtil from 'src/security/security.util';
 
 interface UserService {
-  findUserByEmail(email: string): Promise<User>;
-  findUserById(id: number): Promise<User>;
+  findUserByEmail(email: string, exception?: HttpException): Promise<User>;
+  findUserById(id: number, exception?: HttpException): Promise<User>;
   signUpUser(signUpRequest: SignUpRequest): Promise<User>;
   userExists(email: string): Promise<boolean>;
 }
@@ -32,6 +33,9 @@ export default class UserServiceImpl implements UserService {
 
   async signUpUser(signUpRequest: SignUpRequest): Promise<User> {
     const { email, password, firstName, lastName } = signUpRequest;
+    if (await this.userExists(email)) {
+      throw new UserExistsException("User exists");
+    }
     return await this.prisma.user.create({
       data: {
         email: email,
@@ -50,18 +54,26 @@ export default class UserServiceImpl implements UserService {
     return generateRandomNumber(999999, 99999);
   }
 
-  async findUserById(id: number): Promise<User> {
-    return await this.prisma.user.findUnique({
+  async findUserById(id: number, exception?: HttpException): Promise<User> {
+    const user = await this.prisma.user.findUnique({
       where: {
         id: id,
       },
     });
+    if (!user && exception) {
+      throw exception;
+    }
+    return user;
   }
 
-  async findUserByEmail(email: string): Promise<User> {
-    return await this.prisma.user.findUnique({
+  async findUserByEmail(email: string, exception?: HttpException): Promise<User> {
+    const user = await this.prisma.user.findUnique({
       where: { email: email },
     });
+    if (!user && exception) {
+      throw exception;
+    }
+    return user;
   }
 
   async verifyUser(email: string, code: string): Promise<void> {
@@ -72,7 +84,6 @@ export default class UserServiceImpl implements UserService {
     if (user.verification_code !== code) {
       throw new InvalidVerificationCodeException('Code invalid');
     }
-    user.verified = true;
     this.prisma.user.update({
       where: { email: email },
       data: {

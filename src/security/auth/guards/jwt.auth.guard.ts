@@ -31,17 +31,13 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     const request: Request = context.getArgByIndex(0);
-    const authHeader = request.header('Authorization');
 
-    if (!authHeader) {
-      throw new UnauthorizedException(
-        'You are unauthorized to access this route',
-      );
+    
+    const token = request?.cookies?.AccessToken;
+    console.log(request?.cookies);
+    if (!token) {
+      throw new UnauthorizedException("you are unauthorized to access this route");
     }
-    const token = authHeader.substring(
-      7,
-      request.header('Authorization').length,
-    );
     const sub = this.jwtUtil.extractClaimFromToken(token, 'sub');
     return new Promise<boolean>((resolve, reject) => {
       this.userService

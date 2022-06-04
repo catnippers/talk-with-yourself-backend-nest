@@ -17,10 +17,7 @@ export default class EntryController {
   }
 
   @Post('/')
-  async createEntry(
-    @Param('userId') userId: string,
-    @Body() createEntryRequest: CreateEntryRequest,
-  ): Promise<EntryDto> {
+  async createEntry(@Param('userId') userId: string, @Body() createEntryRequest: CreateEntryRequest): Promise<EntryDto> {
     return await this.entryService.createEntry(
       createEntryRequest,
       Number.parseInt(userId),
@@ -28,10 +25,7 @@ export default class EntryController {
   }
 
   @Post('/:entryId')
-  async loadEntry(
-    @Param('entryId') entryId: string,
-    @Body() body: { secretKey: string },
-  ): Promise<Entry> {
+  async loadEntry(@Param('entryId') entryId: string, @Body() body: { secretKey: string }): Promise<Entry> {
     return await this.entryService.loadEntry(
       Number.parseInt(entryId),
       body.secretKey,
