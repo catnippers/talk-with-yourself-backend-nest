@@ -3,8 +3,6 @@ import { OnEvent } from "@nestjs/event-emitter";
 import { User } from "@prisma/client";
 
 import EmailSender from "src/config/email/email.sender";
-import { UserDto } from "./user.dto";
-import UserService from "./user.service";
 
 @Injectable()
 export default class UserListeners {

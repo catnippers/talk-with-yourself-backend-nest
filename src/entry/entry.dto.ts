@@ -2,10 +2,13 @@ import { Entry } from '@prisma/client';
 import {
   IsArray,
   IsDate,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsString,
+  Length,
 } from 'class-validator';
+import emotions from './emotions';
 
 export default class EntryDto {
   @IsNumber()
@@ -36,13 +39,23 @@ export default class EntryDto {
   }
 }
 
+export class LoadEntryRequest {
+  @IsString()
+  @IsNotEmpty()
+  @Length(32,32)
+  secretKey: string;
+}
+
 export class CreateEntryRequest {
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty({
+    each: true
+  })
   @IsArray()
+  @IsIn(emotions.positiveEmotions.english, {each: true})
   emotions: string[];
 
   @IsNotEmpty()
@@ -51,6 +64,7 @@ export class CreateEntryRequest {
 
   @IsNotEmpty()
   @IsString()
+  @Length(32,32)
   userSecret: string;
 }
 

@@ -9,6 +9,12 @@ import {
 } from 'class-validator';
 import { User } from '@prisma/client';
 
+export class VerificationCodeRequest {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
 export class UserDto {
   @IsMongoId()
   @IsNotEmpty()

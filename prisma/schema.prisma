@@ -31,4 +31,5 @@ model User {
   password String
   refresh_token_id String?
   entries Entry[]
+  updatedAt DateTime @updatedAt
 }

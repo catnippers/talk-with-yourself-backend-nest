@@ -17,3 +17,9 @@ export class UnverifiedEmailException extends HttpException {
     super(message, HttpStatus.FORBIDDEN);
   }
 }
+
+export class ExpiredVerificationCode extends HttpException {
+  constructor(message: string) {
+    super(message, HttpStatus.FORBIDDEN);
+  }
+}

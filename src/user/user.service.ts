@@ -1,11 +1,12 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { User, Prisma } from '@prisma/client';
-import EmailSender from 'src/config/email/email.sender';
 
+import EmailSender from 'src/config/email/email.sender';
 import PrismaService from 'src/config/prisma/prisma.service';
-import { generateRandomNumber } from 'src/config/util/util';
+import { computeTimeDifference, generateRandomNumber } from 'src/config/util/util';
 import { UserExistsException, UserNotFoundException } from 'src/exception/auth.exceptions';
 import {
+  ExpiredVerificationCode,
   InvalidVerificationCodeException,
   UnverifiedEmailException,
 } from 'src/exception/email.verification.exceptions';
@@ -13,8 +14,8 @@ import { SignUpRequest } from 'src/security/auth/auth.dto';
 import SecurityUtil from 'src/security/security.util';
 
 interface UserService {
-  findUserByEmail(email: string, exception?: HttpException): Promise<User>;
-  findUserById(id: number, exception?: HttpException): Promise<User>;
+  findUserByEmail({email, exception}: { email: string, exception?: HttpException }): Promise<User>;
+  findUserById({id, exception}: {id: number,exception?: HttpException}): Promise<User>;
   signUpUser(signUpRequest: SignUpRequest): Promise<User>;
   userExists(email: string): Promise<boolean>;
 }
@@ -25,10 +26,11 @@ export default class UserServiceImpl implements UserService {
   constructor(
     private prisma: PrismaService,
     private securityUtil: SecurityUtil,
+    private emailSender: EmailSender
   ) {}
 
   async userExists(email: string): Promise<boolean> {
-    return (await this.findUserByEmail(email)) ? true : false;
+    return (await this.findUserByEmail({email: email})) ? true : false;
   }
 
   async signUpUser(signUpRequest: SignUpRequest): Promise<User> {
@@ -36,25 +38,53 @@ export default class UserServiceImpl implements UserService {
     if (await this.userExists(email)) {
       throw new UserExistsException("User exists");
     }
-    return await this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         email: email,
         password: await this.securityUtil.passwordEncoder().encode(password),
         first_name: firstName,
         last_name: lastName,
-        verification_code: await (
-          await this.generateVerificationCode()
-        ).toString(),
+        verification_code: this.generateVerificationCode(),
         refresh_token_id: null,
       },
     });
+    const { verification_code } = user
+    await this.emailSender.sendEmail(
+      email,
+      'TWY Email Verification',
+      verification_code
+    );
+    return user;
   }
 
-  private async generateVerificationCode(): Promise<number> {
-    return generateRandomNumber(999999, 99999);
+  async resendVerificationMail(email: string): Promise<void> {
+    if (! await this.userExists(email)) {
+      throw new UserNotFoundException('Invalid email');
+    } 
+    const user = await this.prisma.user.update({
+      where: {email: email},
+      data: {
+        verification_code: this.generateVerificationCode()
+      }
+    });
+    const { verification_code } = user;
+    this.emailSender.sendEmail(
+      email,
+      'TWY Email Verification',
+      verification_code
+    );
   }
 
-  async findUserById(id: number, exception?: HttpException): Promise<User> {
+  private generateVerificationCode(): string {
+    return generateRandomNumber(999999, 99999).toString();
+  }
+
+  async findUserById({
+    id, exception
+  }: {
+    id: number,
+    exception?: HttpException
+  }): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: {
         id: id,
@@ -66,7 +96,7 @@ export default class UserServiceImpl implements UserService {
     return user;
   }
 
-  async findUserByEmail(email: string, exception?: HttpException): Promise<User> {
+  async findUserByEmail({email, exception}: {email: string, exception?: HttpException}): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { email: email },
     });
@@ -77,14 +107,20 @@ export default class UserServiceImpl implements UserService {
   }
 
   async verifyUser(email: string, code: string): Promise<void> {
-    const user = await this.findUserByEmail(email);
+    const user = await this.findUserByEmail({
+      email: email,
+      exception: new UserNotFoundException('User not found')
+    });
     if (user.verified) {
       return;
+    }
+    if (computeTimeDifference(new Date(), user.updatedAt) > (1000 * 60 * 10)) {
+      throw new ExpiredVerificationCode("verification code expired");
     }
     if (user.verification_code !== code) {
       throw new InvalidVerificationCodeException('Code invalid');
     }
-    this.prisma.user.update({
+    await this.prisma.user.update({
       where: { email: email },
       data: {
         verified: true,

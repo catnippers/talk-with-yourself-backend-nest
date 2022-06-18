@@ -19,9 +19,12 @@ export default class EmailSenderImpl implements EmailSender {
 
   private createTransport(): nodemailer.Transporter<SMTPTransport.SentMessageInfo> {
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
+      host: 'smtp-mail.outlook.com',
       port: 587,
       secure: false,
+      tls: {
+        ciphers: 'SSLv3'
+      },
       auth: {
         user: process.env.apiEmail,
         pass: process.env.apiEmailPassword,
@@ -36,7 +39,7 @@ export default class EmailSenderImpl implements EmailSender {
     body: string,
   ): Promise<SMTPTransport.SentMessageInfo> {
     return await this.createTransport().sendMail({
-      from: this.subject,
+      from: process.env.apiEmail,
       to: email,
       subject: subject,
       html: emailTemplate(body),
